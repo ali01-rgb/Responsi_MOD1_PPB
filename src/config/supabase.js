@@ -1,12 +1,15 @@
 const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
 
-function createSupabaseClient(env = process.env) {
-  const url = env.SUPABASE_URL;
-  const key = env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required');
+function createSupabaseClient() {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('Peringatan: Variabel lingkungan SUPABASE_URL atau SUPABASE_KEY belum disetel.');
   }
-  return createClient(url, key);
+
+  return createClient(supabaseUrl, supabaseKey);
 }
 
 module.exports = { createSupabaseClient };

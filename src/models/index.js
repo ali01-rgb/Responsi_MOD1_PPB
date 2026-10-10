@@ -1,15 +1,8 @@
-const { createResourceModel } = require('./resource');
+const { createLoanModel } = require('./loan');
 
 function createModels(supabase) {
   return {
-    member: createResourceModel(supabase, 'anggota', 'joined_at'),
-    book: createResourceModel(supabase, 'buku', 'judul'),
-    loan: createResourceModel(
-      supabase,
-      'peminjaman',
-      'tanggal_peminjaman',
-      '*, anggota(*), buku(*)',
-    ),
+    loan: createLoanModel(supabase)
   };
 }
 

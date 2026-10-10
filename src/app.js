@@ -1,65 +1,37 @@
 const express = require('express');
-const { ValidationError } = require('./validation');
-const { createMemberRouter, createBookRouter, createLoanRouter } = require('./routes/resources');
+const cors = require('cors');
+const { createLoanRoutes } = require('./routes/loans');
 
-function createApp({ models } = {}) {
-  if (!models) {
-    throw new Error('models is required');
-  }
-
+function createApp({ models }) {
   const app = express();
-  app.disable('x-powered-by');
-  app.use((_req, res, next) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('Referrer-Policy', 'no-referrer');
-    res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
-    next();
-  });
-  app.use(express.json({ limit: '100kb' }));
-  app.get('/health', (_req, res) => res.json({ data: { status: 'ok' } }));
-  app.use('/members', createMemberRouter(models.member));
-  app.use('/books', createBookRouter(models.book));
-  app.use('/loans', createLoanRouter(models.loan));
 
-  app.use((error, _req, res, _next) => {
-    if (error instanceof ValidationError || error.statusCode === 400 || error instanceof SyntaxError) {
-      return res.status(400).json({
-        error: { code: 'VALIDATION_ERROR', message: error.message },
-      });
-    }
-    if (error.statusCode === 404) {
-      return res.status(404).json({
-        error: { code: 'NOT_FOUND', message: error.message },
-      });
-    }
-    console.error(error);
-    return res.status(500).json({
-      error: { code: 'INTERNAL_ERROR', message: 'Internal server error' },
+  app.use(cors());
+  app.use(express.json());
+
+  // Root Health Check
+  app.get('/', (req, res) => {
+    res.status(200).json({
+      status: 'online',
+      service: 'Perpustakaan Library Loan REST API',
+      endpoints: {
+        loans: '/loans',
+        filter_example: '/loans?status=Terlambat'
+      }
+    });
+  });
+
+  // Mendaftarkan rute /loans
+  app.use('/loans', createLoanRoutes(models));
+
+  // Fallback 404
+  app.use((req, res) => {
+    res.status(404).json({
+      success: false,
+      message: 'Endpoint tidak ditemukan'
     });
   });
 
   return app;
 }
 
-let productionApp;
-
-function getProductionApp() {
-  if (!productionApp) {
-    const { createSupabaseClient } = require('./config/supabase');
-    const { createModels } = require('./models');
-
-    productionApp = createApp({
-      models: createModels(createSupabaseClient()),
-    });
-  }
-
-  return productionApp;
-}
-
-function handler(req, res) {
-  return getProductionApp()(req, res);
-}
-
-module.exports = handler;
-module.exports.createApp = createApp;
+module.exports = { createApp };
