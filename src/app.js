@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { createLoanRoutes } = require('./routes/loans');
 
-function createApp({ models }) {
+function createApp({ models } = {}) {
   const app = express();
 
   app.use(cors());
@@ -20,8 +20,10 @@ function createApp({ models }) {
     });
   });
 
-  // Mendaftarkan rute /loans
-  app.use('/loans', createLoanRoutes(models));
+  // Mendaftarkan rute /loans jika models tersedia
+  if (models) {
+    app.use('/loans', createLoanRoutes(models));
+  }
 
   // Fallback 404
   app.use((req, res) => {
@@ -34,4 +36,5 @@ function createApp({ models }) {
   return app;
 }
 
-module.exports = { createApp };
+module.exports = createApp;
+module.exports.createApp = createApp;
